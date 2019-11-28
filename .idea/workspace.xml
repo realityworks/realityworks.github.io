@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9f383954-ee56-4455-bb89-4f23fe94533c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tree1.html" beforeDir="false" afterPath="$PROJECT_DIR$/tree1.html" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -33,14 +34,6 @@
         <option value="CSS File" />
       </list>
     </option>
-  </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>model</find>
-      <find>type</find>
-      <find>rotat</find>
-      <find>-90</find>
-    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -94,14 +87,9 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration name="tree1.html" type="JavascriptDebugType" temporary="true" uri="http://localhost:63342/ar-xmas/ARjs/tree1.html" useBuiltInWebServerPort="true">
+    <configuration name="tree1.html" type="JavascriptDebugType" uri="http://localhost:63342/realityworks.github.io/ARjs/tree1.html" useBuiltInWebServerPort="true">
       <method v="2" />
     </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="JavaScript Debug.tree1.html" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -123,6 +111,7 @@
       <workItem from="1574875307046" duration="721000" />
       <workItem from="1574876683709" duration="918000" />
       <workItem from="1574918159564" duration="993000" />
+      <workItem from="1574952293847" duration="1458000" />
     </task>
     <servers />
   </component>

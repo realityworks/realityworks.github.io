@@ -8,6 +8,8 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <link type="text/css" rel="stylesheet" href="tree.css">
 <script>
+    var currentNodeNameIndex = 0
+
     AFRAME.registerComponent('tree', {
         init: function () {
             // Wait for model to load.
@@ -19,10 +21,9 @@
                 const obj = this.object3D;
                 // Go over the submeshes and modify materials we want.
                 obj.traverse(node => {
-                    console.log(node.name)
-                    if (node.name.indexOf('Bauble') !== -1) {
+                    if (node.name.indexOf('Bauble_') !== -1) {
+                        node.material = node.material.clone()
                         node.visible = false
-                        //node.material.color.set('red');
                     }
                 });
             });
@@ -37,18 +38,20 @@
         }
     });
 
-    function toggleBaubles() {
+    function toggleBaubles(color) {
         let sceneEl = document.querySelector('a-scene');
         let tree = sceneEl.querySelector('#tree-node');
 
         const obj = tree.object3D;
 
+        let baubleName = 'Bauble_' + currentNodeNameIndex.toString()
+
         // Go over the submeshes and modify materials we want.
         obj.traverse(node => {
-            console.log(node.name)
-            if (node.name.indexOf('Bauble') !== -1) {
-                node.visible = !node.visible
-                //node.material.color.set('red');
+            if (node.name === baubleName) {
+                node.visible = !node.visible;
+                node.material.color.set(color);
+                currentNodeNameIndex++;
             }
         });
     }
@@ -56,7 +59,6 @@
     function placeSphere(color) {
         let sceneEl = document.querySelector('a-scene');
         let markerEl = sceneEl.querySelector('#marker-node');
-
         let el = document.createElement('a-sphere');
         let x_offset = (Math.random() - 0.5) * 3;
         let y_offset = (Math.random() - 0.5) * 3;
@@ -74,10 +76,10 @@
 
 <div id="info">
     <section>
-    <button style='background-color: lightgreen' id="add_green" onclick="placeSphere('#3EEF2D')">Add Green</button>
-    <button style='background-color: lightblue' id="add_blue" onclick="placeSphere('#3E2DEF')">Add Blue</button>
-    <button style='background-color: indianred' id="add_red" onclick="placeSphere('#EF2D5E')">Add Red</button>
-    <button style='background-color: white' id="showHideBauble" onclick="toggleBaubles()">Toggle</button>
+    <button style='background-color: lightgreen' id="add_green" onclick="toggleBaubles('#3EEF2D')">Add Green</button>
+    <button style='background-color: lightblue' id="add_blue" onclick="toggleBaubles('#3E2DEF')">Add Blue</button>
+    <button style='background-color: indianred' id="add_red" onclick="toggleBaubles('#EF2D5E')">Add Red</button>
+    <button style='background-color: white' id="showHideBauble" onclick="toggleBaubles('#FFFFFF')">Toggle</button>
     </section>
     <!--<label><input id="option_trs" name="trs" type="checkbox"/>TRS</label>
     <label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
@@ -97,9 +99,9 @@
         <a-asset-item id="tree" src="./tree_1300.gltf"></a-asset-item>
     </a-assets>
 
-<!--    <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">-->
-<!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 10000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" position="0 0.5 -10" gltf-model="#tree" tree></a-entity>
+    <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">
+<!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 0 15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
@@ -111,7 +113,11 @@
                   position="20 0 0"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="10 10 10"></a-entity>
-<!--    </a-marker>-->
+        <a-entity light="type: point; intensity: 0.75; distance: 50"
+                  position="0 20 0"></a-entity>
+        <a-entity light="type: point; intensity: 0.75; distance: 50"
+                  position="0 -20 0"></a-entity>
+    </a-marker>
     <a-entity camera></a-entity>
 </a-scene>
 

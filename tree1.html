@@ -92,7 +92,7 @@
 <!-- start the body of your page -->
 <!-- add some info at the top of the page -->
 <!--<a-scene embedded arjs='sourceType: webcam; detectionMode: mono; maxDetectionRate: 30; logarithmicDepthBuffer: true;' precision="low">-->
-<a-scene embedded arjs="patternRatio: 0.50; sourceType: webcam; " renderer='logarithmicDepthBuffer: true;' precision="low">
+<a-scene embedded arjs="patternRatio: 0.50; sourceType: webcam; " renderer='logarithmicDepthBuffer: false;' precision="low">
     <a-assets>
         <!--<a-asset-item id="cityModel" src="https://cdn.aframe.io/test-models/models/glTF-2.0/virtualcity/VC.gltf"></a-asset-item>-->
         <!--<a-asset-item id="skull" src="./scene.gltf"></a-asset-item>-->
@@ -102,7 +102,7 @@
     <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
         <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
-        <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 0 20"></a-entity>
+        <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"

@@ -9,7 +9,6 @@
 <link type="text/css" rel="stylesheet" href="tree.css">
 <script>
     var currentNodeNameIndex = 0
-
     AFRAME.registerComponent('tree', {
         init: function () {
             // Wait for model to load.
@@ -21,8 +20,24 @@
                 const obj = this.object3D;
                 // Go over the submeshes and modify materials we want.
                 obj.traverse(node => {
+                    if (node.name.indexOf('Cone_') !== -1) {
+                        node.material.color.set('#308529');
+                        //node.geometry.computeFaceNormals(true);
+                        //node.geometry.mergeVertices;
+                        //node.geometry.computeVertexNormals(true);
+                        //node.geometry.normalizeNormals();
+                        node.material.flatShading = true;
+                    }
                     if (node.name.indexOf('Bauble_') !== -1) {
-                        node.material = node.material.clone()
+                        node.material = node.material.clone();
+                        //node.geometry.computeFaceNormals();
+                        // node.geometry.computeFaceNormals();
+
+                        //node.geometry.mergeVertices;
+                        //node.geometry.computeVertexNormals(false);
+                        //node.geometry.normalizeNormals();
+                        //node.geometry.normalsNeedUpdate = true;
+                        //node.material.flatShading = false;
                         node.visible = false
                     }
                 });
@@ -49,26 +64,25 @@
         // Go over the submeshes and modify materials we want.
         obj.traverse(node => {
             if (node.name === baubleName) {
-                node.visible = !node.visible;
-                node.material.color.set(color);
+                //node.visible = !node.visible;
+                //node.material.color.set(color);
+                placeSphere(color, node.position)
                 currentNodeNameIndex++;
             }
         });
     }
 
-    function placeSphere(color) {
+    function placeSphere(color, position) {
         let sceneEl = document.querySelector('a-scene');
         let markerEl = sceneEl.querySelector('#marker-node');
+        let treeEl = sceneEl.querySelector('#tree-node');
         let el = document.createElement('a-sphere');
-        let x_offset = (Math.random() - 0.5) * 3;
-        let y_offset = (Math.random() - 0.5) * 3;
-        let z_offset = (Math.random() - 0.5) * 2;
 
-        el.setAttribute('position', { x: x_offset, y: y_offset, z: z_offset });
-        el.setAttribute('radius', 0.1);
+        el.setAttribute('position', position);
+        el.setAttribute('radius', 0.05);
         el.setAttribute('color', color);
 
-        markerEl.appendChild(el)
+        treeEl.appendChild(el)
     }
 </script>
 
@@ -99,9 +113,9 @@
         <a-asset-item id="tree" src="./tree_1300.gltf"></a-asset-item>
     </a-assets>
 
-    <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">
+<!--    <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">-->
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 -0.5 -5" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
@@ -117,7 +131,7 @@
                   position="0 20 0"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="0 -20 0"></a-entity>
-    </a-marker>
+<!--    </a-marker>-->
     <a-entity camera></a-entity>
 </a-scene>
 

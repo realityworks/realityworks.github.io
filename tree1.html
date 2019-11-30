@@ -4,32 +4,22 @@
 <script src="https://raw.githack.com/jeromeetienne/AR.js/2.0.8/aframe/build/aframe-ar.js"></script>
 <script src=”https://rawgit.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
 <script src="https://unpkg.com/aframe-particle-system-component@1.0.9/dist/aframe-particle-system-component.min.js"></script>
+<!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.5.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.5.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.5.0/firebase-firestore.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <link type="text/css" rel="stylesheet" href="tree.css">
 <script>
-    // Manage Zoom and double tap handling
-    window.addEventListener(
-        "touchmove",
-        function(event) {
-            if (event.scale !== 1) {
-                event.preventDefault();
-            }
-        },
-        { passive: false }
-    );
-
-    var lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-        var now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
-            event.preventDefault();
-        }
-        lastTouchEnd = now;
-    }, false);
 
     // Global variable of the number
-    var currentNodeNameIndex = 0
+    var currentNodeNameIndex = -1;
+    var database;
+    var sfDocRef;
+
+    setupFirebase();
+    setupTouchHandling();
 
     // Check the tree loading and respond accordingly
     AFRAME.registerComponent('tree', {
@@ -66,33 +56,60 @@
                 });
             });
 
-            // this.el.addEventListener('click', () => {
-            //     toggleBaubles();
-            // });
-
             this.el.addEventListener('model-error', (e) => {
                 alert(e)
             });
         }
     });
 
-    function toggleBaubles(color) {
+    function initializeBaubles(count) {
+
+        // Early out if we are not activating anything
+        if (count < 0) {
+            return;
+        }
+
         let sceneEl = document.querySelector('a-scene');
         let tree = sceneEl.querySelector('#tree-node');
 
         const obj = tree.object3D;
 
-        let baubleName = 'Bauble_' + currentNodeNameIndex.toString()
+        // Negative values indicate initial load
+        if (currentNodeNameIndex < 0) {
+            currentNodeNameIndex = 0;
+        }
 
-        // Go over the submeshes and modify materials we want.
-        obj.traverse(node => {
-            if (node.name === baubleName) {
-                //node.visible = !node.visible;
-                //node.material.color.set(color);
-                placeSphere(color, node.position)
-                currentNodeNameIndex++;
-            }
-        });
+        for (var i = currentNodeNameIndex; i < count; i++) {
+            let baubleName = 'Bauble_' + i.toString();
+            let color = '#ff0000';
+
+            // Go over the submeshes and modify materials we want.
+            obj.traverse(node => {
+                if (node.name === baubleName) {
+                    console.log(`Initialising : ${node.name}`);
+                    placeSphere(color, node.position)
+                }
+            });
+        }
+        currentNodeNameIndex = count
+    }
+
+    function showCurrentBauble(color) {
+        incrementBaubleCount();
+        // let sceneEl = document.querySelector('a-scene');
+        // let tree = sceneEl.querySelector('#tree-node');
+        //
+        // const obj = tree.object3D;
+        //
+        // let baubleName = 'Bauble_' + currentNodeNameIndex.toString();
+        //
+        // // Go over the submeshes and modify materials we want.
+        // obj.traverse(node => {
+        //     if (node.name === baubleName) {
+        //         placeSphere(color, node.position);
+        //
+        //     }
+        // });
     }
 
     function placeSphere(color, position) {
@@ -107,16 +124,102 @@
 
         treeEl.appendChild(el)
     }
+
+    function setupFirebase() {
+        // Setup access to the Google Firebase SDK
+        var config = {
+            apiKey: 'AIzaSyCmfCENTgiNO9_26ey1Pz2zzVLsvXxFONA',
+            authDomain: 'arxmas-c90bf.firebaseapp.com',
+            projectId: 'arxmas-c90bf',
+        };
+
+        firebase.initializeApp(config);
+
+        database = firebase.firestore();
+
+        firebase.auth().signInAnonymously().catch(function (error) {
+            // Handle Errors here.
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            // ...
+        });
+
+        // Create a reference to the SF doc.
+        sfDocRef = database.collection("current").doc("e68Wm7an4d2zpAiu8w2Z");
+
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user) {
+                // User is signed in.
+                var isAnonymous = user.isAnonymous;
+                var uid = user.uid;
+                // Listen for updates to the counter
+                sfDocRef.onSnapshot(function (doc) {
+                    console.log("Current data: ", doc.data());
+                    initializeBaubles(doc.data().currentNodeNameIndex);
+                    //stepBaubles();
+                });
+            } else {
+                // User is signed out.
+                // ...
+            }
+            // ...
+        });
+    }
+
+    function incrementBaubleCount() {
+        database.runTransaction(function(transaction) {
+            return transaction.get(sfDocRef).then(function(sfDoc) {
+                if (!sfDoc.exists) {
+                    throw "Document does not exist!";
+                }
+
+                var newCount = sfDoc.data().currentNodeNameIndex + 1;
+                if (newCount <= 1300) {
+
+                    transaction.update(sfDocRef, { currentNodeNameIndex: newCount });
+                    return newCount;
+                } else {
+                    return Promise.reject("Cannot increment.");
+                }
+            });
+        }).then(function(newCount) {
+            console.log("Count increased to ", newCount);
+        }).catch(function(err) {
+            console.error(err);
+        });
+    }
+
+    function setupTouchHandling() {
+        // Manage Zoom and double tap handling
+        window.addEventListener(
+            "touchmove",
+            function(event) {
+                if (event.scale !== 1) {
+                    event.preventDefault();
+                }
+            },
+            { passive: false }
+        );
+
+        var lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            var now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    }
 </script>
 
 <body>
 
 <div id="info">
     <section>
-    <button style='background-color: lightgreen' id="add_green" onclick="toggleBaubles('#3EEF2D')">Add Green</button>
-    <button style='background-color: lightblue' id="add_blue" onclick="toggleBaubles('#3E2DEF')">Add Blue</button>
-    <button style='background-color: indianred' id="add_red" onclick="toggleBaubles('#EF2D5E')">Add Red</button>
-    <button style='background-color: white' id="showHideBauble" onclick="toggleBaubles('#FFFFFF')">Toggle</button>
+    <button style='background-color: lightgreen' id="add_green" onclick="showCurrentBauble('#3EEF2D')">Add Green</button>
+    <button style='background-color: lightblue' id="add_blue" onclick="showCurrentBauble('#3E2DEF')">Add Blue</button>
+    <button style='background-color: indianred' id="add_red" onclick="showCurrentBauble('#EF2D5E')">Add Red</button>
+    <button style='background-color: white' id="showHideBauble" onclick="showCurrentBauble('#FFFFFF')">Toggle</button>
     </section>
     <!--<label><input id="option_trs" name="trs" type="checkbox"/>TRS</label>
     <label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
@@ -138,7 +241,7 @@
 
     <a-marker id="marker-node" type="pattern" url="/pattern-tree-50.patt">
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 -10" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
@@ -155,6 +258,10 @@
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="0 -20 0"></a-entity>
     </a-marker>
+
+    <a-entity id="size" position="0.0 -1.0 -5"
+              text="color: white; align: center; value: On the first day of christmas my true love sent to me... a partridge in a pear tree!; width: 2">
+    </a-entity>
     <a-entity camera></a-entity>
 </a-scene>
 

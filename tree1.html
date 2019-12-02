@@ -259,9 +259,9 @@
         <a-asset-item id="tree" src="./tree_1300.gltf"></a-asset-item>
     </a-assets>
 
-<!--    <a-marker id="marker-node" type="pattern" url="/pattern-tree-75.patt">-->
+    <a-marker id="marker-node" type="pattern" url="/pattern-tree-75.patt">
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 -1 -6" gltf-model="#tree" tree></a-entity>
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
@@ -277,7 +277,7 @@
                   position="0 20 0"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="0 -20 0"></a-entity>
-<!--    </a-marker>-->
+    </a-marker>
 
     <a-entity id="size" position="0.0 -1.0 -5"
               text="color: white; align: center; value: On the first day of christmas my true love sent to me... a partridge in a pear tree!; width: 2">

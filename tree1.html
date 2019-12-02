@@ -19,6 +19,7 @@
 
     // Global variable of the number
     var currentNodeItems = "";
+    var currentNodeItemsIntialized = false;
     var database;
     var sfDocRef;
 
@@ -75,17 +76,34 @@
         }
     }
 
-    function initializeBaubles(items, offset) {
-
-        // Early out if we are not activating anything
-        if (items === "") {
-            return;
-        }
-
+    function updateBaubles(allItems) {
         let sceneEl = document.querySelector('a-scene');
         let tree = sceneEl.querySelector('#tree-node');
 
         const obj = tree.object3D;
+
+        if (allItems.length < currentNodeItems.length) {
+            // Remove all Bauble objects and start again
+            // Go over the submeshes and modify materials we want.
+            var objToRemove = [];
+            obj.traverse(node => {
+                if (node.name.indexOf("Inserted_") != -1) {
+                    console.log(`Deleting : ${node.name}`);
+                    objToRemove.push(node);
+                }
+            });
+
+            for (var node of objToRemove) {
+                obj.remove(node);
+                sceneEl.object3D.remove(node);
+            }
+
+            // Make it easier, just force a reset for now (Can optimize later)
+            currentNodeItems = "";
+        }
+
+        let offset = currentNodeItems.length;
+        let items = allItems.slice(offset);
 
         for (var i = 0; i < items.length; i++) {
             let baubleName = 'Bauble_' + (i + offset).toString();
@@ -95,41 +113,55 @@
             obj.traverse(node => {
                 if (node.name === baubleName) {
                     console.log(`Initialising : ${node.name}`);
-                    placeSphere(color, node.position)
+                    placeSphere("Inserted_" + node.name, color, node.position)
                 }
             });
         }
 
+        currentNodeItemsIntialized = true;
+
         // Todo once we implement from the backend
-        //currentNodeItems += items;
+        currentNodeItems = allItems;
     }
 
     function showCurrentBauble(color) {
-        incrementBaubleCount();
-        // let sceneEl = document.querySelector('a-scene');
-        // let tree = sceneEl.querySelector('#tree-node');
-        //
-        // const obj = tree.object3D;
-        //
-        // let baubleName = 'Bauble_' + currentNodeNameIndex.toString();
-        //
-        // // Go over the submeshes and modify materials we want.
-        // obj.traverse(node => {
-        //     if (node.name === baubleName) {
-        //         placeSphere(color, node.position);
-        //
-        //     }
-        // });
+        // If we haven't received anything then don't try to add items, this will overwrite everything
+        if (currentNodeItemsIntialized === false) {
+            return
+        }
+
+        // Pre-emptive
+        updateBaubles(currentNodeItems + color);
+
+        database.runTransaction(function(transaction) {
+            return transaction.get(sfDocRef).then(function(sfDoc) {
+                if (!sfDoc.exists) {
+                    throw "Document does not exist!";
+                }
+
+                var newCount = sfDoc.data().currentNodeItems.length;
+                if (newCount <= 1300) {
+                    transaction.update(sfDocRef, { currentNodeItems: sfDoc.data().currentNodeItems + color });
+                    return newCount;
+                } else {
+                    return Promise.reject("Cannot increment.");
+                }
+            });
+        }).then(function(newCount) {
+            console.log("Count increased to ", newCount);
+        }).catch(function(err) {
+            console.error(err);
+        });
     }
 
-    function placeSphere(color, position) {
+    function placeSphere(nodeName, color, position) {
         let sceneEl = document.querySelector('a-scene');
         let markerEl = sceneEl.querySelector('#marker-node');
         let treeEl = sceneEl.querySelector('#tree-node');
         let el = document.createElement('a-sphere');
 
-        // let obj3d = el.object3D;
-        // obj3d.material = THREE.MeshPhysicalMaterial();
+        let obj3d = el.object3D;
+        obj3d.name = nodeName;
 
         el.setAttribute('position', position);
         el.setAttribute('radius', 0.05);
@@ -168,37 +200,13 @@
                 // Listen for updates to the counter
                 sfDocRef.onSnapshot(function (doc) {
                     console.log("Current data: ", doc.data());
-                    initializeBaubles(doc.data().currentNodeItems, 0);//doc.data().currentNodeNameIndex);
-                    //stepBaubles();
+                    updateBaubles(doc.data().currentNodeItems);//doc.data().currentNodeNameIndex);
                 });
             } else {
                 // User is signed out.
                 // ...
             }
             // ...
-        });
-    }
-
-    function incrementBaubleCount() {
-        database.runTransaction(function(transaction) {
-            return transaction.get(sfDocRef).then(function(sfDoc) {
-                if (!sfDoc.exists) {
-                    throw "Document does not exist!";
-                }
-
-                var newCount = sfDoc.data().currentNodeNameIndex + 1;
-                if (newCount <= 1300) {
-
-                    transaction.update(sfDocRef, { currentNodeNameIndex: newCount });
-                    return newCount;
-                } else {
-                    return Promise.reject("Cannot increment.");
-                }
-            });
-        }).then(function(newCount) {
-            console.log("Count increased to ", newCount);
-        }).catch(function(err) {
-            console.error(err);
         });
     }
 
@@ -229,9 +237,9 @@
 
 <div id="info">
     <section>
-    <button style='background-color: lightgreen' id="add_green" onclick="showCurrentBauble(A_GREEN)">Add Green</button>
-    <button style='background-color: lightblue' id="add_blue" onclick="showCurrentBauble(A_BLUE)">Add Blue</button>
-    <button style='background-color: indianred' id="add_red" onclick="showCurrentBauble(A_RED)">Add Red</button>
+    <button style='background-color: lightgreen' id="add_green" onclick="showCurrentBauble('G')">Add Green</button>
+    <button style='background-color: lightblue' id="add_blue" onclick="showCurrentBauble('B')">Add Blue</button>
+    <button style='background-color: indianred' id="add_red" onclick="showCurrentBauble('R')">Add Red</button>
     </section>
     <!--<label><input id="option_trs" name="trs" type="checkbox"/>TRS</label>
     <label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
@@ -253,7 +261,7 @@
 
 <!--    <a-marker id="marker-node" type="pattern" url="/pattern-tree-75.patt">-->
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 -6" gltf-model="#tree" tree></a-entity>
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 -1 -6" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>

@@ -13,12 +13,15 @@
 <link type="text/css" rel="stylesheet" href="tree.css">
 <script>
 
+    let A_GREEN = '#3EEF2D';
+    let A_RED = '#EF2D5E';
+    let A_BLUE = '#3E2DEF';
+
     // Global variable of the number
-    var currentNodeNameIndex = -1;
+    var currentNodeItems = "";
     var database;
     var sfDocRef;
 
-    setupFirebase();
     setupTouchHandling();
 
     // Check the tree loading and respond accordingly
@@ -30,6 +33,7 @@
                 console.log("Loaded model");
                 // alert("model loaded")
                 // Grab the mesh / scene.
+                setupFirebase();
                 const obj = this.object3D;
                 // Go over the submeshes and modify materials we want.
                 obj.traverse(node => {
@@ -42,7 +46,7 @@
                         node.material.flatShading = true;
                     }
                     if (node.name.indexOf('Bauble_') !== -1) {
-                        node.material = node.material.clone();
+                        //node.material = node.material.clone();
                         //node.geometry.computeFaceNormals();
                         // node.geometry.computeFaceNormals();
 
@@ -62,10 +66,19 @@
         }
     });
 
-    function initializeBaubles(count) {
+    function colorForLetter(letter) {
+        switch (letter) {
+            case 'r', 'R': return A_RED;
+            case 'g', 'G': return A_GREEN;
+            case 'b', 'B': return A_BLUE;
+            default: return A_RED;
+        }
+    }
+
+    function initializeBaubles(items, offset) {
 
         // Early out if we are not activating anything
-        if (count < 0) {
+        if (items === "") {
             return;
         }
 
@@ -74,14 +87,9 @@
 
         const obj = tree.object3D;
 
-        // Negative values indicate initial load
-        if (currentNodeNameIndex < 0) {
-            currentNodeNameIndex = 0;
-        }
-
-        for (var i = currentNodeNameIndex; i < count; i++) {
-            let baubleName = 'Bauble_' + i.toString();
-            let color = '#ff0000';
+        for (var i = 0; i < items.length; i++) {
+            let baubleName = 'Bauble_' + (i + offset).toString();
+            let color = colorForLetter(items.charAt(i));
 
             // Go over the submeshes and modify materials we want.
             obj.traverse(node => {
@@ -91,7 +99,9 @@
                 }
             });
         }
-        currentNodeNameIndex = count
+
+        // Todo once we implement from the backend
+        //currentNodeItems += items;
     }
 
     function showCurrentBauble(color) {
@@ -117,6 +127,9 @@
         let markerEl = sceneEl.querySelector('#marker-node');
         let treeEl = sceneEl.querySelector('#tree-node');
         let el = document.createElement('a-sphere');
+
+        // let obj3d = el.object3D;
+        // obj3d.material = THREE.MeshPhysicalMaterial();
 
         el.setAttribute('position', position);
         el.setAttribute('radius', 0.05);
@@ -155,7 +168,7 @@
                 // Listen for updates to the counter
                 sfDocRef.onSnapshot(function (doc) {
                     console.log("Current data: ", doc.data());
-                    initializeBaubles(doc.data().currentNodeNameIndex);
+                    initializeBaubles(doc.data().currentNodeItems, 0);//doc.data().currentNodeNameIndex);
                     //stepBaubles();
                 });
             } else {
@@ -216,10 +229,9 @@
 
 <div id="info">
     <section>
-    <button style='background-color: lightgreen' id="add_green" onclick="showCurrentBauble('#3EEF2D')">Add Green</button>
-    <button style='background-color: lightblue' id="add_blue" onclick="showCurrentBauble('#3E2DEF')">Add Blue</button>
-    <button style='background-color: indianred' id="add_red" onclick="showCurrentBauble('#EF2D5E')">Add Red</button>
-    <button style='background-color: white' id="showHideBauble" onclick="showCurrentBauble('#FFFFFF')">Toggle</button>
+    <button style='background-color: lightgreen' id="add_green" onclick="showCurrentBauble(A_GREEN)">Add Green</button>
+    <button style='background-color: lightblue' id="add_blue" onclick="showCurrentBauble(A_BLUE)">Add Blue</button>
+    <button style='background-color: indianred' id="add_red" onclick="showCurrentBauble(A_RED)">Add Red</button>
     </section>
     <!--<label><input id="option_trs" name="trs" type="checkbox"/>TRS</label>
     <label><input id="option_visible" name="visible" type="checkbox" checked="checked"/>Only Visible</label>
@@ -239,9 +251,9 @@
         <a-asset-item id="tree" src="./tree_1300.gltf"></a-asset-item>
     </a-assets>
 
-    <a-marker id="marker-node" type="pattern" url="/pattern-tree-75.patt">
+<!--    <a-marker id="marker-node" type="pattern" url="/pattern-tree-75.patt">-->
 <!--        <a-entity animation="property: rotation; to: 0 360 0; loop: true; dur: 1000" position="0 0.5 0" gltf-model="#tree" loading></a-entity>-->
-        <a-entity id="tree-node" animation="property: scale; from: 0 0 0; to: 1 1 1; loop: false; dur: 2000" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 0" gltf-model="#tree" tree></a-entity>
+        <a-entity id="tree-node" animation="property: rotation; to: 0 360; loop: true; dur: 10000; easing: linear" position="0 0.5 -6" gltf-model="#tree" tree></a-entity>
         <a-entity particle-system="preset: snow; particleCount: 10000;" position="0 2.25 -15"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="20 10 10"></a-entity>
@@ -257,7 +269,7 @@
                   position="0 20 0"></a-entity>
         <a-entity light="type: point; intensity: 0.75; distance: 50"
                   position="0 -20 0"></a-entity>
-    </a-marker>
+<!--    </a-marker>-->
 
     <a-entity id="size" position="0.0 -1.0 -5"
               text="color: white; align: center; value: On the first day of christmas my true love sent to me... a partridge in a pear tree!; width: 2">
